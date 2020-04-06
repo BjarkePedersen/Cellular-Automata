@@ -8,9 +8,9 @@ use rand::seq::SliceRandom;
 use rand::Rng;
 use rayon::prelude::*;
 
-const WIDTH: usize = 800;
-const HEIGHT: usize = 800;
-const GRID_CELL_SIZE: usize = 4;
+const WIDTH: usize = 600;
+const HEIGHT: usize = 600;
+const GRID_CELL_SIZE: usize = 2;
 const BOTTOM_EXTRA: usize = 200;
 
 fn main() {
@@ -36,7 +36,7 @@ fn main() {
         .par_iter_mut()
         .enumerate()
         .for_each(|(_, grid_cell)| {
-            let is_alive = if rand::thread_rng().gen_range(0.0, 1.0) < 0.001 {
+            let is_alive = if rand::thread_rng().gen_range(0.0, 1.0) < 0.0001 {
                 true
             } else {
                 false
@@ -48,52 +48,39 @@ fn main() {
             *grid_cell = cell;
         });
 
+    let mut indices: Vec<usize> =
+        (0..(WIDTH / GRID_CELL_SIZE) * (HEIGHT / GRID_CELL_SIZE)).collect();
+
     // Main loop
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let mut rng = rand::thread_rng();
 
-        // let time_since_update = time_since_update(&mut viewport.time);
-        // if time_since_update * 1000.0 < 1000.0 {
-        //     thread::sleep(time::Duration::from_millis(100));
-        //     continue;
-        // } else {
-        //     app::update_time(&mut viewport.time);
-        // }
-
-        let mut new_cells: Vec<Cell> =
-            vec![Cell::new(false); (WIDTH / GRID_CELL_SIZE) * (HEIGHT / GRID_CELL_SIZE)];
-        // let mut new_cells: Vec<Cell> = grid_buffer.clone();
-        // let mut grid_buffer_clone: Vec<Cell> = grid_buffer.clone();
+        let mut new_cells: [Cell; (WIDTH / GRID_CELL_SIZE) * (HEIGHT / GRID_CELL_SIZE)] =
+            [Cell::new(false); (WIDTH / GRID_CELL_SIZE) * (HEIGHT / GRID_CELL_SIZE)];
 
         let mut index = Index::new(0, (WIDTH / GRID_CELL_SIZE) * (HEIGHT / GRID_CELL_SIZE));
-        // for i in 0..grid_buffer.len() {
         for (i, new_cell) in new_cells.iter_mut().enumerate() {
-            // let mut new_cell = new_cells[i];
             index.assign(i);
-            // let cell = grid_buffer[i];
 
             let above = index - (WIDTH / GRID_CELL_SIZE);
             let below = index + (WIDTH / GRID_CELL_SIZE);
 
-            let adjacent_indices = vec![index - 1, index + 1, above, below];
+            let adjacent_indices = [index - 1, index + 1, above, below];
 
             let neighbors = adjacent_indices
                 .iter()
-                .map(|j| grid_buffer[usize::from(*j)])
-                .collect::<Vec<_>>();
+                .map(|j| grid_buffer[usize::from(*j)]);
 
-            let num_neighbors =
-                neighbors.iter().fold(
-                    0,
-                    |acc, neighbor| if neighbor.is_alive { acc + 1 } else { acc },
-                );
+            let num_neighbors = neighbors.fold(
+                0,
+                |acc, neighbor| if neighbor.is_alive { acc + 1 } else { acc },
+            );
 
             if num_neighbors == 1 {
                 new_cell.is_alive = true;
             }
         }
 
-        let mut indices: Vec<usize> = (0..new_cells.len()).collect();
         indices.shuffle(&mut rng);
 
         for i in &indices {
@@ -104,7 +91,7 @@ fn main() {
             let below = index + (WIDTH / GRID_CELL_SIZE);
             let below_below = index + 2 * (WIDTH / GRID_CELL_SIZE);
 
-            let neighbor_indices = vec![
+            let neighbor_indices = [
                 above - 2,
                 above - 1,
                 above,
@@ -130,27 +117,13 @@ fn main() {
                 below_below + 1,
                 below_below + 2,
             ];
-            // let neighbor_indices = vec![
-            //     above - 1,
-            //     above,
-            //     above + 1,
-            //     index + 1,
-            //     below + 1,
-            //     below,
-            //     below - 1,
-            //     index - 1,
-            // ];
 
-            let neighbors = neighbor_indices
-                .iter()
-                .map(|j| new_cells[usize::from(*j)])
-                .collect::<Vec<_>>();
+            let neighbors = neighbor_indices.iter().map(|j| new_cells[usize::from(*j)]);
 
-            let num_neighbors =
-                neighbors.iter().fold(
-                    0,
-                    |acc, neighbor| if neighbor.is_alive { acc + 1 } else { acc },
-                );
+            let num_neighbors = neighbors.fold(
+                0,
+                |acc, neighbor| if neighbor.is_alive { acc + 1 } else { acc },
+            );
 
             if num_neighbors > 0 {
                 new_cells[usize::from(index)].is_alive = false;
@@ -165,17 +138,17 @@ fn main() {
 
         let mut size = 0;
 
-        for i in indices {
-            index.assign(i);
+        for i in &indices {
+            index.assign(*i);
 
             let above = index - (WIDTH / GRID_CELL_SIZE);
             let above_above = index - 2 * (WIDTH / GRID_CELL_SIZE);
             let below = index + (WIDTH / GRID_CELL_SIZE);
             let below_below = index + 2 * (WIDTH / GRID_CELL_SIZE);
 
-            let adjacent_indices = vec![index - 1, index + 1, above, below];
+            let adjacent_indices = [index - 1, index + 1, above, below];
 
-            let diagonal_indices = vec![
+            let diagonal_indices = [
                 above - 2,
                 above - 1,
                 above + 1,
@@ -200,22 +173,18 @@ fn main() {
 
             let adjacent_neighbors = adjacent_indices
                 .iter()
-                .map(|j| grid_buffer[usize::from(*j)])
-                .collect::<Vec<_>>();
+                .map(|j| grid_buffer[usize::from(*j)]);
 
-            let diagonal_neighbors = diagonal_indices
-                .iter()
-                .map(|j| new_cells[usize::from(*j)])
-                .collect::<Vec<_>>();
+            let diagonal_neighbors = diagonal_indices.iter().map(|j| new_cells[usize::from(*j)]);
 
             let num_adjacent_neighbors =
-                adjacent_neighbors.iter().fold(
+                adjacent_neighbors.fold(
                     0,
                     |acc, neighbor| if neighbor.is_alive { acc + 1 } else { acc },
                 );
 
             let num_diagonal_neighbors =
-                diagonal_neighbors.iter().fold(
+                diagonal_neighbors.fold(
                     0,
                     |acc, neighbor| if neighbor.is_alive { acc + 1 } else { acc },
                 );
@@ -252,12 +221,8 @@ fn main() {
         };
 
         let smooth_change = (0..d)
-            .collect::<Vec<i32>>()
-            .iter()
             .enumerate()
             .map(|(i, _)| change_log[size_log_len - i - 1])
-            .collect::<Vec<i32>>()
-            .iter()
             .sum::<i32>()
             / d;
 
@@ -267,7 +232,6 @@ fn main() {
             &mut window,
             &mut render_buffer,
             &mut output_buffer,
-            // &mut temp_grid_buffer,
             &mut grid_buffer,
             &size_log,
             max_size,
@@ -359,16 +323,11 @@ fn render(
 pub struct Cell {
     pub is_alive: bool,
     pub age: u8,
-    pub debug_col: Col,
 }
 
 impl Cell {
     pub fn new(is_alive: bool) -> Cell {
-        Cell {
-            is_alive,
-            age: 0,
-            debug_col: Col::black(),
-        }
+        Cell { is_alive, age: 0 }
     }
 
     pub fn update_age(&mut self) {
@@ -393,21 +352,18 @@ impl Into<f32> for Cell {
 impl Into<Col> for Cell {
     fn into(self) -> Col {
         let age = self.age;
-        // let young_col = Col::new(0.4, 1.0, 0.0) * 0.8;
-        let young_col = Col::new(0.1, 0.7, 1.0);
+        let young_col = Col::new(0.1, 0.7, 1.0) * 0.4;
         let old_col = Col::yellow() * 0.7;
-        let really_old_col = Col::red() * 0.7;
+        let really_old_col = Col::red() * 1.0;
         let is_alive: f32 = self.into();
+
         let mix =
             1.0 - ((2.0 / (1.0 + 2.71828_f32.powf(-1.0 * age as f32 / 40.0))) - 1.0).powf(2.0);
         let mix_2 =
             1.0 - ((2.0 / (1.0 + 2.71828_f32.powf(-1.0 * age as f32 / 130.0))) - 1.0).powf(2.0);
 
-        // let col = (mix_col(young_col, old_col, mix * 0.5) + mix_col(young_col, old_col, mix * 0.5))
-        //     * is_alive;
         return mix_col(mix_col(young_col, old_col, mix), really_old_col, mix_2)
             * is_alive
             * (1.0 - 1.0 / (age as f32 / 2.0 + 1.0));
-        // self.debug_col
     }
 }
