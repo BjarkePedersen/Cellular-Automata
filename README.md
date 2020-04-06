@@ -1,2 +1,2 @@
-# Ceullular Automata
-A ceullular automata in Rust. Not optimized!
+# Cellular Automata
+A cellular automata in Rust. Not optimized!
