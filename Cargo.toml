@@ -1,0 +1,12 @@
+[package]
+name = "cellular_automata"
+version = "0.1.0"
+authors = ["Bjarke <bjarke137@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+cgmath = "0.17.0"
+rand = "0.7.3"
+rayon = "1.0.3"
+minifb = "0.11.2"
+time = "0.1.42"
